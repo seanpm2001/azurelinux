@@ -62,7 +62,7 @@ find %{buildroot} -type f -name "*.la" -delete -print
 %{_mandir}/man3/*
 
 %changelog
-* Wed Sep 11 2024 Nan Liu <liunan@microsoft.com> - 2.5.5-1
+* Fri Nov 01 2024 Nan Liu <liunan@microsoft.com> - 2.5.5-1
 - Upgrade to 2.5.5 as 2.5.4 is no longer supported upstream.
 
 * Fri Oct 27 2023 CBL-Mariner Servicing Account <cblmargh@microsoft.com> - 2.5.4-1

@@ -1,8 +1,8 @@
-%define         commit_hash 58aa9203c123022138b22cf96540c284876a7910
+%define         commit_hash 2c9f5602f0ba3d9da1c2596322dfc4e156844890
 Summary:        CLI tool for spawning and running containers per OCI spec.
 Name:           runc
 # update "commit_hash" above when upgrading version
-Version:        1.1.13
+Version:        1.1.14
 Release:        1%{?dist}
 License:        ASL 2.0
 Vendor:         Microsoft Corporation
@@ -43,8 +43,8 @@ make install-man DESTDIR=%{buildroot} PREFIX=%{_prefix}
 %{_mandir}/*
 
 %changelog
-* Wed Sep 11 2024 Nan Liu <liunan@microsoft.com> - 1.1.13-1
-- Bump version to 1.1.13
+* Fri Nov 01 2024 Nan Liu <liunan@microsoft.com> - 1.1.14-1
+- Bump version to 1.1.14
 
 * Mon Feb 05 2024 Henry Beberman <henry.beberman@microsoft.com> - 1.1.12-1
 - Bump version to 1.1.12
