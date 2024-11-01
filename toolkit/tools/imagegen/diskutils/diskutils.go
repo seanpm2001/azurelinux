@@ -7,6 +7,7 @@ package diskutils
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -470,6 +471,7 @@ func CreatePartitions(diskDevPath string, disk configuration.Disk, rootEncryptio
 	}
 
 	// Partitions assumed to be defined in sorted order
+	partDevPathToFsTypeMap := make(map[string]string)
 	for idx, partition := range disk.Partitions {
 		partType, partitionNumber := obtainPartitionDetail(idx, usingExtendedPartition)
 		// Insert an extended partition
@@ -517,8 +519,82 @@ func CreatePartitions(diskDevPath string, disk configuration.Disk, rootEncryptio
 		}
 
 		partIDToFsTypeMap[partition.ID] = partFsType
+		partDevPathToFsTypeMap[partDevPath] = partFsType
 	}
+
+	// Ensure all the partition info is refreshed.
+	err = RefreshPartitions(diskDevPath)
+	if err != nil {
+		err = fmt.Errorf("failed to refresh partitions after filesystem format:\n%w", err)
+		return partDevPathMap, partIDToFsTypeMap, encryptedRoot, readOnlyRoot, err
+	}
+
+	// Wait until partition info is actually populated.
+	// This avoids silent errors occuring later on in the build.
+	// For example, dracut uses `lsblk -l` to query for partition info and if it doesn't find it, it will fallback to
+	// using the device path (e.g. /dev/loop1), which will cause boot failures if the image is being built offline.
+	err = waitForPartitionInfo(diskDevPath, partDevPathToFsTypeMap, partitionTableType)
+	if err != nil {
+		return partDevPathMap, partIDToFsTypeMap, encryptedRoot, readOnlyRoot, err
+	}
+
 	return
+}
+
+// Runs a wait loop until the partitions metadata has been populated in the kernel (e.g. by udev).
+func waitForPartitionInfo(diskDevPath string, partDevPathToFsTypeMap map[string]string,
+	partitionTableType configuration.PartitionTableType,
+) error {
+	const (
+		totalAttempts = 5
+		retryDuration = time.Second
+	)
+
+	err := retry.Run(func() error {
+		partitions, err := GetDiskPartitions(diskDevPath)
+		if err != nil {
+			return err
+		}
+
+		errs := []error{}
+
+		for _, partition := range partitions {
+			if partition.Type != "part" {
+				continue
+			}
+
+			if partitionTableType == configuration.PartitionTableTypeGpt {
+				if partition.PartitionTypeUuid == "" {
+					err = fmt.Errorf("partition (%s) missing PARTTYPE", partition.Path)
+					errs = append(errs, err)
+				}
+
+				if partition.PartUuid == "" {
+					err = fmt.Errorf("partition (%s) missing PARTUUID", partition.Path)
+					errs = append(errs, err)
+				}
+			}
+
+			fsType := partDevPathToFsTypeMap[partition.Path]
+			if partition.FileSystemType != fsType {
+				err = fmt.Errorf("partition (%s) expected to have FSTYPE (%s) but is (%s)", fsType, partition.Path,
+					partition.FileSystemType)
+				errs = append(errs, err)
+			}
+		}
+
+		if len(errs) > 0 {
+			return errors.Join(err)
+		}
+
+		return nil
+	}, totalAttempts, retryDuration)
+	if err != nil {
+		err = fmt.Errorf("timed out waiting for partition info to be populated:\n%w", err)
+		return err
+	}
+
+	return nil
 }
 
 // createSinglePartition creates a single partition based on the partition config
@@ -611,19 +687,27 @@ func createSinglePartition(diskDevPath string, partitionNumber int, partitionTab
 	// So to deal with this, we call partprobe here to query and flush the
 	// partition table information, which should enforce that the devtmpfs
 	// files are created when partprobe returns control.
-	//
+	err = RefreshPartitions(diskDevPath)
+	if err != nil {
+		err = fmt.Errorf("failed to refresh partitions after partition creation:\n%w", err)
+		return "", err
+	}
+	return initializeSinglePartition(diskDevPath, partitionNumber, partitionTableType, partition)
+}
+
+func RefreshPartitions(diskDevPath string) error {
 	// Added flock because "partprobe -s" apparently doesn't always block.
 	// flock is part of the util-linux package and helps to synchronize access
 	// with other cooperating processes. The important part is it will block
 	// if the fd is busy, and then execute the command. Adding a timeout
 	// to prevent us from possibly waiting forever.
-	stdout, stderr, err := shell.Execute("flock", "--timeout", timeoutInSeconds, diskDevPath, "partprobe", "-s", diskDevPath)
+	err := shell.ExecuteLiveWithErr(1 /*stderrLines*/, "flock", "--timeout", "5", diskDevPath,
+		"partprobe", "-s", diskDevPath)
 	if err != nil {
-		err = fmt.Errorf("failed to execute partprobe:\n%v\n%w", stderr, err)
-		return "", err
+		return fmt.Errorf("partprobe failed:\n%w", err)
 	}
-	logger.Log.Debugf("Partprobe -s returned: %s", stdout)
-	return InitializeSinglePartition(diskDevPath, partitionNumber, partitionTableType, partition)
+
+	return nil
 }
 
 // Returns true if the version of 'parted' supports the 'type' session command.
@@ -669,8 +753,8 @@ func getPartedVersion() (int, int, error) {
 	return major, minor, nil
 }
 
-// InitializeSinglePartition initializes a single partition based on the given partition configuration
-func InitializeSinglePartition(diskDevPath string, partitionNumber int,
+// initializeSinglePartition initializes a single partition based on the given partition configuration
+func initializeSinglePartition(diskDevPath string, partitionNumber int,
 	partitionTableType configuration.PartitionTableType, partition configuration.Partition,
 ) (partDevPath string, err error) {
 	const (
@@ -755,12 +839,11 @@ func InitializeSinglePartition(diskDevPath string, partitionNumber int,
 	}
 
 	// Make sure all partition information is actually updated.
-	stdout, stderr, err := shell.Execute("flock", "--timeout", timeoutInSeconds, diskDevPath, "partprobe", "-s", diskDevPath)
+	err = RefreshPartitions(diskDevPath)
 	if err != nil {
-		err = fmt.Errorf("failed to execute partprobe after partition initialization:\n%v\n%w", stderr, err)
+		err = fmt.Errorf("failed to refresh partitions after partition initialization:\n%w", err)
 		return "", err
 	}
-	logger.Log.Debugf("Partprobe -s returned: %s", stdout)
 
 	return
 }
