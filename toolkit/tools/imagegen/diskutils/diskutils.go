@@ -531,11 +531,11 @@ func CreatePartitions(diskDevPath string, disk configuration.Disk, rootEncryptio
 
 	// Wait until partition info is actually populated.
 	// This avoids silent errors occuring later on in the build.
-	// For example, dracut uses `lsblk -l` to query for partition info and if it doesn't find it, it will fallback to
+	// For example, dracut uses `blkid -l` to query for partition info and if it doesn't find it, it will fallback to
 	// using the device path (e.g. /dev/loop1), which will cause boot failures if the image is being built offline.
 	err = waitForPartitionInfo(diskDevPath, partDevPathToFsTypeMap, partitionTableType)
 	if err != nil {
-		return partDevPathMap, partIDToFsTypeMap, encryptedRoot, readOnlyRoot, err
+		return
 	}
 
 	return
