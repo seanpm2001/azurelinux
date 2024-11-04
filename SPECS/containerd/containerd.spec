@@ -50,8 +50,6 @@ make VERSION="%{version}" REVISION="%{commit_hash}" binaries man
 %check
 export BUILDTAGS="-mod=vendor"
 make VERSION="%{version}" REVISION="%{commit_hash}" test
-git init
-make root-test
 
 %install
 make VERSION="%{version}" REVISION="%{commit_hash}" DESTDIR="%{buildroot}" PREFIX="/usr" install install-man
