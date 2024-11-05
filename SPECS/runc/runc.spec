@@ -1,9 +1,9 @@
-%define         commit_hash 51d5e94601ceffbbd85688df1c928ecccbfa4685
+%define         commit_hash d7735e388ef5eecbd60d93bfbe5afe0f3fbc8a6b
 Summary:        CLI tool for spawning and running containers per OCI spec.
 Name:           runc
 # update "commit_hash" above when upgrading version
-Version:        1.1.12
-Release:        2%{?dist}
+Version:        1.2.1
+Release:        1%{?dist}
 License:        ASL 2.0
 Vendor:         Microsoft Corporation
 Distribution:   Azure Linux
@@ -43,6 +43,9 @@ make install-man DESTDIR=%{buildroot} PREFIX=%{_prefix}
 %{_mandir}/*
 
 %changelog
+* Tue Nov 05 2024 Nan Liu <liunan@microsoft.com> - 1.2.1-1
+- Bump version to 1.2.1 required by containerd 2.0.0
+
 * Tue Oct 15 2024 Muhammad Falak <mwani@microsoft.com> - 1.1.12-2
 - Pin golang version to <= 1.22
 
