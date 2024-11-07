@@ -14,22 +14,16 @@
 %global _missing_build_ids_terminate_build 1
 %global _no_recompute_build_ids 1
 
-%ifarch x86_64
-%define arch x86_64
-%define archdir x86
-%define config_source %{SOURCE1}
-%endif
-
 %ifarch aarch64
 %global __provides_exclude_from %{_libdir}/debug/.build-id/
 %define arch arm64
 %define archdir arm64
-%define config_source %{SOURCE2}
+%define config_source %{SOURCE1}
 %endif
 
 Summary:        Linux Kernel
-Name:           kernel
-Version:        6.6.57.1
+Name:           kernel-64k
+Version:        6.6.57.1.64k1
 Release:        2%{?dist}
 License:        GPLv2
 Vendor:         Microsoft Corporation
@@ -37,13 +31,13 @@ Distribution:   Azure Linux
 Group:          System Environment/Kernel
 URL:            https://github.com/microsoft/CBL-Mariner-Linux-Kernel
 Source0:        https://github.com/microsoft/CBL-Mariner-Linux-Kernel/archive/rolling-lts/mariner-%{mariner_version}/%{version}.tar.gz#/%{name}-%{version}.tar.gz
-Source1:        config
-Source2:        config_aarch64
-Source3:        sha512hmac-openssl.sh
-Source4:        cbl-mariner-ca-20211013.pem
-Source5:        cpupower
-Source6:        cpupower.service
+Source1:        config_aarch64
+Source2:        sha512hmac-openssl.sh
+Source3:        cbl-mariner-ca-20211013.pem
+Source4:        cpupower
+Source5:        cpupower.service
 Patch0:         0001-add-mstflint-kernel-%{mstflintver}.patch
+ExclusiveArch:  aarch64
 BuildRequires:  audit-devel
 BuildRequires:  bash
 BuildRequires:  bc
@@ -69,9 +63,6 @@ BuildRequires:  procps-ng-devel
 BuildRequires:  python3-devel
 BuildRequires:  sed
 BuildRequires:  systemd-bootstrap-rpm-macros
-%ifarch x86_64
-BuildRequires:  pciutils-devel
-%endif
 Requires:       filesystem
 Requires:       kmod
 Requires(post): coreutils
@@ -168,7 +159,7 @@ make mrproper
 cp %{config_source} .config
 
 # Add CBL-Mariner cert into kernel's trusted keyring
-cp %{SOURCE4} certs/mariner.pem
+cp %{SOURCE3} certs/mariner.pem
 sed -i 's#CONFIG_SYSTEM_TRUSTED_KEYS=""#CONFIG_SYSTEM_TRUSTED_KEYS="certs/mariner.pem"#' .config
 
 cp .config current_config
@@ -195,10 +186,6 @@ make VERBOSE=1 KBUILD_BUILD_VERSION="1" KBUILD_BUILD_HOST="CBL-Mariner" ARCH=%{a
 
 # Compile perf, python3-perf
 make -C tools/perf PYTHON=%{python3} all
-
-%ifarch x86_64
-make -C tools turbostat cpupower
-%endif
 
 #Compile bpftool
 make -C tools/bpf/bpftool
@@ -228,15 +215,11 @@ install -vdm 755 %{buildroot}%{_prefix}/src/linux-headers-%{uname_r}
 install -vdm 755 %{buildroot}%{_libdir}/debug/lib/modules/%{uname_r}
 
 install -d -m 755 %{buildroot}%{_sysconfdir}/sysconfig
-install -c -m 644 %{SOURCE5} %{buildroot}/%{_sysconfdir}/sysconfig/cpupower
+install -c -m 644 %{SOURCE4} %{buildroot}/%{_sysconfdir}/sysconfig/cpupower
 install -d -m 755 %{buildroot}%{_unitdir}
-install -c -m 644 %{SOURCE6} %{buildroot}%{_unitdir}/cpupower.service
+install -c -m 644 %{SOURCE5} %{buildroot}%{_unitdir}/cpupower.service
 
 make INSTALL_MOD_PATH=%{buildroot} modules_install
-
-%ifarch x86_64
-install -vm 600 arch/x86/boot/bzImage %{buildroot}/boot/vmlinuz-%{uname_r}
-%endif
 
 %ifarch aarch64
 install -vm 600 arch/arm64/boot/Image %{buildroot}/boot/vmlinuz-%{uname_r}
@@ -265,11 +248,6 @@ find . -name Makefile* -o -name Kconfig* -o -name *.pl | xargs  sh -c 'cp --pare
 find arch/%{archdir}/include include scripts -type f | xargs  sh -c 'cp --parents "$@" %{buildroot}%{_prefix}/src/linux-headers-%{uname_r}' copy
 find $(find arch/%{archdir} -name include -o -name scripts -type d) -type f | xargs  sh -c 'cp --parents "$@" %{buildroot}%{_prefix}/src/linux-headers-%{uname_r}' copy
 find arch/%{archdir}/include Module.symvers include scripts -type f | xargs  sh -c 'cp --parents "$@" %{buildroot}%{_prefix}/src/linux-headers-%{uname_r}' copy
-%ifarch x86_64
-# CONFIG_STACK_VALIDATION=y requires objtool to build external modules
-install -vsm 755 tools/objtool/objtool %{buildroot}%{_prefix}/src/linux-headers-%{uname_r}/tools/objtool/
-install -vsm 755 tools/objtool/fixdep %{buildroot}%{_prefix}/src/linux-headers-%{uname_r}/tools/objtool/
-%endif
 
 cp .config %{buildroot}%{_prefix}/src/linux-headers-%{uname_r} # copy .config manually to be where it's expected to be
 ln -sf "%{_prefix}/src/linux-headers-%{uname_r}" "%{buildroot}/lib/modules/%{uname_r}/build"
@@ -289,11 +267,6 @@ make -C tools/perf DESTDIR=%{buildroot} prefix=%{_prefix} install-python_ext
 
 # Install bpftool
 make -C tools/bpf/bpftool DESTDIR=%{buildroot} prefix=%{_prefix} bash_compdir=%{_sysconfdir}/bash_completion.d/ mandir=%{_mandir} install
-
-%ifarch x86_64
-# Install turbostat cpupower
-make -C tools DESTDIR=%{buildroot} prefix=%{_prefix} bash_compdir=%{_sysconfdir}/bash_completion.d/ mandir=%{_mandir} turbostat_install cpupower_install
-%endif
 
 # Remove trace (symlink to perf). This file causes duplicate identical debug symbols
 rm -vf %{buildroot}%{_bindir}/trace
@@ -374,19 +347,6 @@ echo "initrd of kernel %{uname_r} removed" >&2
 %defattr(-,root,root)
 %{_libexecdir}
 %exclude %dir %{_libdir}/debug
-%ifarch x86_64
-%{_sbindir}/cpufreq-bench
-%{_lib64dir}/libperf-jvmti.so
-%{_lib64dir}/libcpupower.so*
-%{_sysconfdir}/cpufreq-bench.conf
-%{_includedir}/cpuidle.h
-%{_includedir}/cpufreq.h
-%{_includedir}/powercap.h
-%{_mandir}/man1/cpupower*.gz
-%{_mandir}/man8/turbostat*.gz
-%{_datadir}/locale/*/LC_MESSAGES/cpupower.mo
-%{_datadir}/bash-completion/completions/cpupower
-%endif
 %ifarch aarch64
 %{_libdir}/libperf-jvmti.so
 %endif

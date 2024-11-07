@@ -1,71 +1,31 @@
 %global debug_package %{nil}
 %global sha512hmac bash %{_sourcedir}/sha512hmac-openssl.sh
-%ifarch x86_64
-%global buildarch x86_64
-%endif
 %ifarch aarch64
 %global buildarch aarch64
 %endif
 %define uname_r %{version}-%{release}
 Summary:        Signed Linux Kernel for %{buildarch} systems
-Name:           kernel-signed-%{buildarch}
-Version:        6.6.57.1
+Name:           kernel-64k-signed-%{buildarch}
+Version:        6.6.57.1.64k1
 Release:        2%{?dist}
 License:        GPLv2
 Vendor:         Microsoft Corporation
 Distribution:   Azure Linux
 Group:          System Environment/Kernel
 URL:            https://github.com/microsoft/CBL-Mariner-Linux-Kernel
-# This spec purpose is to take an input kernel rpm and input secure-boot-signed
-# kernel binary from the same build and generate a new "kernel" rpm with the
-# signed kernel binary + all of the other original kernel files, triggers,
-# scriptlets, requires, provides, etc.
+# This package's "version" and "release" must reflect the unsigned version that
+# was signed.
+# An important consequence is that when making a change to this package, the
+# unsigned version/release must be increased to keep the two versions consistent.
+# Ideally though, this spec will not change much or at all, so the version will
+# just track the unsigned package's version/release.
 #
-# We need to ensure the kernel modules and kernel binary used are from the exact
-# same build because at build time the kernel modules are signed with an
-# ephemeral key that the kernel enrolls in its keyring. We enforce kernel
-# module signature checking when we enable security features like kernel
-# lockdown so our kernel can only load those specific kernel modules at runtime.
-#
-# Additionally, to complete the UEFI Secure Boot chain, we must PE-sign the
-# kernel binary. Ideally we would enable secure-boot signing tools like pesign
-# or sbsign to be callable from inside the rpmbuild environment, that way we can
-# secure-boot sign the kernel binary during the kernel's rpmbuild. It is best
-# practice to sign as soon as possible. However there are issues getting that
-# secure boot signing infrastructure in place today. Hence we sign the
-# resulting kernel binary and "repackage" the kernel RPM (something rpm itself
-# actively tries to make sure you never do...generally for good reasons).
-#
-# To achive this repackaging, this spec creates a new subpackage named
-# "kernel". To retain all of the initial kernel package behaviors, we make sure
-# the subpackage has the same requires, provides, triggers, post steps, and
-# files as the original kernel package.
-#
-# This specific repackaging implementation leaves room for us to enable the
-# more ideal secure-boot signing flow in the future without introducing any
-# sort of breaking change or new packaging. Users still install a "kernel"
-# package like they normally would.
-#
-# Maintenance Notes:
-# - This spec's "version" and "release" must reflect the unsigned version that
-# was signed. An important consequence is that when making a change to this
-# spec or the normal kernel spec, the other spec's version version/release must
-# be increased to keep the two versions consistent.
-#
-# - Make sure the kernel subpackage's Requires, Provides, triggers, post/postun
-# scriptlets, and files match the normal kernel spec's. The kernel subpackage
-# should contain the same content as the input kernel package but replace the
-# kernel binary with our signed kernel binary. Since all the requires, provides,
-# etc are the same, this new kernel package can be a direct replacement for the
-# normal kernel package and RPM will resolve packages with kernel dependencies
-# correctly.
-#
-# To populate the input sources:
+# To populate these sources:
 #   1. Build the unsigned packages as normal
 #   2. Sign the desired binary
 #   3. Place the unsigned package and signed binary in this spec's folder
 #   4. Build this spec
-Source0:        kernel-%{version}-%{release}.%{buildarch}.rpm
+Source0:        kernel-64k-%{version}-%{release}.%{buildarch}.rpm
 Source1:        vmlinuz-%{uname_r}
 Source2:        sha512hmac-openssl.sh
 BuildRequires:  cpio
@@ -77,7 +37,7 @@ BuildRequires:  sed
 %description
 This package contains the Linux kernel package with kernel signed with the production key
 
-%package -n     kernel
+%package -n     kernel-64k
 Summary:        Linux Kernel
 Group:          System Environment/Kernel
 Requires:       filesystem
@@ -85,7 +45,7 @@ Requires:       kmod
 Requires(post): coreutils
 Requires(postun): coreutils
 
-%description -n kernel
+%description -n kernel-64k
 The kernel package contains the signed Linux kernel.
 
 %prep
@@ -112,20 +72,20 @@ popd
 %{sha512hmac} %{buildroot}/boot/vmlinuz-%{uname_r} | sed -e "s,$RPM_BUILD_ROOT,," > %{buildroot}/boot/.vmlinuz-%{uname_r}.hmac
 cp %{buildroot}/boot/.vmlinuz-%{uname_r}.hmac %{buildroot}/lib/modules/%{uname_r}/.vmlinuz.hmac
 
-%triggerin -n kernel -- initramfs
+%triggerin -n kernel-64k -- initramfs
 mkdir -p %{_localstatedir}/lib/rpm-state/initramfs/pending
 touch %{_localstatedir}/lib/rpm-state/initramfs/pending/%{uname_r}
 echo "initrd generation of kernel %{uname_r} will be triggered later" >&2
 
-%triggerun -n kernel -- initramfs
+%triggerun -n kernel-64k -- initramfs
 rm -rf %{_localstatedir}/lib/rpm-state/initramfs/pending/%{uname_r}
 rm -rf /boot/initramfs-%{uname_r}.img
 echo "initrd of kernel %{uname_r} removed" >&2
 
-%postun -n kernel
+%postun -n kernel-64k
 %grub2_postun
 
-%post -n kernel
+%post -n kernel-64k
 /sbin/depmod -a %{uname_r}
 %grub2_post
 
