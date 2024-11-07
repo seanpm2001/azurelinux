@@ -4,6 +4,7 @@
 %define uname_r %{version}-%{release}
 %define mariner_version 3
 %define kernel_version 6.6.57.1
+%define extra_64k_version 64k1
 
 # find_debuginfo.sh arguments are set by default in rpm's macros.
 # The default arguments regenerate the build-id for vmlinux in the
@@ -24,7 +25,7 @@
 
 Summary:        Linux Kernel
 Name:           kernel-64k
-Version:        %{kernel_version}.64k1
+Version:        %{kernel_version}.%{extra_64k_version}
 Release:        2%{?dist}
 License:        GPLv2
 Vendor:         Microsoft Corporation
@@ -38,7 +39,7 @@ Source3:        cbl-mariner-ca-20211013.pem
 Source4:        cpupower
 Source5:        cpupower.service
 Patch0:         0001-add-mstflint-kernel-%{mstflintver}.patch
-ExclusiveArch:  aarch64
+#ExclusiveArch:  aarch64
 BuildRequires:  audit-devel
 BuildRequires:  bash
 BuildRequires:  bc
@@ -153,8 +154,7 @@ This package contains the bpftool, which allows inspection and simple
 manipulation of eBPF programs and maps.
 
 %prep
-%setup -q -n CBL-Mariner-Linux-Kernel-rolling-lts-mariner-%{mariner_version}-%{kernel_version}
-%patch 0 -p1
+%autosetup -p1 -n CBL-Mariner-Linux-Kernel-rolling-lts-mariner-%{mariner_version}-%{kernel_version}
 make mrproper
 
 cp %{config_source} .config
@@ -164,7 +164,7 @@ cp %{SOURCE3} certs/mariner.pem
 sed -i 's#CONFIG_SYSTEM_TRUSTED_KEYS=""#CONFIG_SYSTEM_TRUSTED_KEYS="certs/mariner.pem"#' .config
 
 cp .config current_config
-sed -i 's/CONFIG_LOCALVERSION=""/CONFIG_LOCALVERSION="-%{release}"/' .config
+sed -i 's/CONFIG_LOCALVERSION=""/CONFIG_LOCALVERSION=".%{extra_64k_version}-%{release}"/' .config
 make LC_ALL=  ARCH=%{arch} oldconfig
 
 # Verify the config files match
