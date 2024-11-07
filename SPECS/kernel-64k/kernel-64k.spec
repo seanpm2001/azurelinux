@@ -3,6 +3,7 @@
 %global mstflintver 4.28.0
 %define uname_r %{version}-%{release}
 %define mariner_version 3
+%define kernel_version 6.6.57.1
 
 # find_debuginfo.sh arguments are set by default in rpm's macros.
 # The default arguments regenerate the build-id for vmlinux in the
@@ -23,14 +24,14 @@
 
 Summary:        Linux Kernel
 Name:           kernel-64k
-Version:        6.6.57.1.64k1
+Version:        %{kernel_version}.64k1
 Release:        2%{?dist}
 License:        GPLv2
 Vendor:         Microsoft Corporation
 Distribution:   Azure Linux
 Group:          System Environment/Kernel
 URL:            https://github.com/microsoft/CBL-Mariner-Linux-Kernel
-Source0:        https://github.com/microsoft/CBL-Mariner-Linux-Kernel/archive/rolling-lts/mariner-%{mariner_version}/%{version}.tar.gz#/%{name}-%{version}.tar.gz
+Source0:        https://github.com/microsoft/CBL-Mariner-Linux-Kernel/archive/rolling-lts/mariner-%{mariner_version}/%{kernel_version}.tar.gz#/kernel-%{kernel_version}.tar.gz
 Source1:        config_aarch64
 Source2:        sha512hmac-openssl.sh
 Source3:        cbl-mariner-ca-20211013.pem
@@ -152,7 +153,7 @@ This package contains the bpftool, which allows inspection and simple
 manipulation of eBPF programs and maps.
 
 %prep
-%setup -q -n CBL-Mariner-Linux-Kernel-rolling-lts-mariner-%{mariner_version}-%{version}
+%setup -q -n CBL-Mariner-Linux-Kernel-rolling-lts-mariner-%{mariner_version}-%{kernel_version}
 %patch 0 -p1
 make mrproper
 
