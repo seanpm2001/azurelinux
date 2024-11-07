@@ -6,7 +6,7 @@
 %define uname_r %{version}-%{release}
 Summary:        Signed Linux Kernel for %{buildarch} systems
 Name:           kernel-64k-signed-%{buildarch}
-Version:        6.6.57.1.64k1
+Version:        6.6.57.1
 Release:        2%{?dist}
 License:        GPLv2
 Vendor:         Microsoft Corporation
@@ -89,7 +89,7 @@ echo "initrd of kernel %{uname_r} removed" >&2
 /sbin/depmod -a %{uname_r}
 %grub2_post
 
-%files -n kernel
+%files -n kernel-64k
 %defattr(-,root,root)
 %license COPYING
 /boot/System.map-%{uname_r}
