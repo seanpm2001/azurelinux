@@ -30,7 +30,7 @@
 Summary:        Linux Kernel
 Name:           kernel
 Version:        6.6.57.1
-Release:        2%{?dist}
+Release:        3%{?dist}
 License:        GPLv2
 Vendor:         Microsoft Corporation
 Distribution:   Azure Linux
@@ -407,6 +407,9 @@ echo "initrd of kernel %{uname_r} removed" >&2
 %{_sysconfdir}/bash_completion.d/bpftool
 
 %changelog
+* Fri Nov 08 2024 Pawel Winogrodzki <pawelwi@microsoft.com> - 6.6.57.1-3
+- Dummy bump.
+
 * Wed Oct 30 2024 Pawel Winogrodzki <pawelwi@microsoft.com> - 6.6.57.1-2
 - Dummy bump.
 

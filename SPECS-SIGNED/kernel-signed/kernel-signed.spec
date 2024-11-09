@@ -10,7 +10,7 @@
 Summary:        Signed Linux Kernel for %{buildarch} systems
 Name:           kernel-signed-%{buildarch}
 Version:        6.6.57.1
-Release:        2%{?dist}
+Release:        3%{?dist}
 License:        GPLv2
 Vendor:         Microsoft Corporation
 Distribution:   Azure Linux
@@ -145,6 +145,9 @@ echo "initrd of kernel %{uname_r} removed" >&2
 %exclude /module_info.ld
 
 %changelog
+* Fri Nov 08 2024 Pawel Winogrodzki <pawelwi@microsoft.com> - 6.6.57.1-3
+- Dummy bump.
+
 * Wed Oct 30 2024 Pawel Winogrodzki <pawelwi@microsoft.com> - 6.6.57.1-2
 - Dummy bump.
 
