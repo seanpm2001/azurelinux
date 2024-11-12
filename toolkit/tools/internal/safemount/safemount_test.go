@@ -14,6 +14,7 @@ import (
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/buildpipeline"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/file"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/safeloopback"
+	"github.com/microsoft/azurelinux/toolkit/tools/internal/versioncompare"
 	"github.com/moby/sys/mountinfo"
 	"github.com/stretchr/testify/assert"
 )
@@ -67,7 +68,8 @@ func TestResourceBusy(t *testing.T) {
 
 	// Set up partitions.
 	_, _, _, _, err = diskutils.CreatePartitions(loopback.DevicePath(), diskConfig,
-		configuration.RootEncryption{}, configuration.ReadOnlyVerityRoot{}, true /*diskKnownToBeEmpty*/)
+		configuration.RootEncryption{}, configuration.ReadOnlyVerityRoot{}, true, /*diskKnownToBeEmpty*/
+		versioncompare.New("6.6"))
 	if !assert.NoError(t, err, "failed to create partitions on disk", loopback.DevicePath()) {
 		return
 	}

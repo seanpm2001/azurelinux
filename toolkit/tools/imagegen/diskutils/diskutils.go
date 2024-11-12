@@ -20,22 +20,17 @@ import (
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/logger"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/retry"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/shell"
+	"github.com/microsoft/azurelinux/toolkit/tools/internal/systemdependency"
+	"github.com/microsoft/azurelinux/toolkit/tools/internal/versioncompare"
 	"github.com/sirupsen/logrus"
 )
 
 var (
-	// When calling mkfs, the default options change depending on the host OS you are running on and typically match
-	// what the distro has decided is best for their OS. For example, for ext2/3/4, the defaults are stored in
-	// /etc/mke2fs.conf.
-	// However, when building Azure Linux images, the defaults should be as consistent as possible and should only contain
-	// features that are supported on Azure Linux.
-	DefaultMkfsOptions = map[string][]string{
-		"ext2": {"-b", "4096", "-O", "none,sparse_super,large_file,filetype,resize_inode,dir_index,ext_attr"},
-		"ext3": {"-b", "4096", "-O", "none,sparse_super,large_file,filetype,resize_inode,dir_index,ext_attr,has_journal"},
-		"ext4": {"-b", "4096", "-O", "none,sparse_super,large_file,filetype,resize_inode,dir_index,ext_attr,has_journal,extent,huge_file,flex_bg,metadata_csum,64bit,dir_nlink,extra_isize"},
-	}
-
 	partedVersionRegex = regexp.MustCompile(`^parted \(GNU parted\) (\d+)\.(\d+)`)
+	// For exampke: mke2fs 1.47.0 (5-Feb-2023)
+	mke2fsVersionRegex = regexp.MustCompile(`(?m)^mke2fs (\d+\.\d+\.\d+) \(\d+-[a-zA-Z]+-\d+\)$`)
+	// For example: mkfs.xfs version 6.5.0
+	mkfsXfsVersionRegex = regexp.MustCompile(`^mkfs\.xfs version (\d+\.\d+\.\d+)$`)
 
 	// The default partition name used when the version of `parted` is too old (<3.5).
 	LegacyDefaultParitionName = "primary"
@@ -435,6 +430,7 @@ func WaitForDevicesToSettle() error {
 // CreatePartitions creates partitions on the specified disk according to the disk config
 func CreatePartitions(diskDevPath string, disk configuration.Disk, rootEncryption configuration.RootEncryption,
 	readOnlyRootConfig configuration.ReadOnlyVerityRoot, diskKnownToBeEmpty bool,
+	targetKernelVersion *versioncompare.TolerantVersion,
 ) (partDevPathMap map[string]string, partIDToFsTypeMap map[string]string, encryptedRoot EncryptedRootDevice, readOnlyRoot VerityDevice, err error) {
 	const timeoutInSeconds = "5"
 	partDevPathMap = make(map[string]string)
@@ -492,7 +488,7 @@ func CreatePartitions(diskDevPath string, disk configuration.Disk, rootEncryptio
 			return partDevPathMap, partIDToFsTypeMap, encryptedRoot, readOnlyRoot, err
 		}
 
-		partFsType, err := FormatSinglePartition(partDevPath, partition)
+		partFsType, err := formatSinglePartition(partDevPath, partition, targetKernelVersion)
 		if err != nil {
 			err = fmt.Errorf("failed to format partition:\n%w", err)
 			return partDevPathMap, partIDToFsTypeMap, encryptedRoot, readOnlyRoot, err
@@ -793,7 +789,8 @@ func setGptPartitionType(partition configuration.Partition, timeoutInSeconds, di
 }
 
 // FormatSinglePartition formats the given partition to the type specified in the partition configuration
-func FormatSinglePartition(partDevPath string, partition configuration.Partition,
+func formatSinglePartition(partDevPath string, partition configuration.Partition,
+	targetKernelVersion *versioncompare.TolerantVersion,
 ) (fsType string, err error) {
 	const (
 		totalAttempts = 5
@@ -807,14 +804,17 @@ func FormatSinglePartition(partDevPath string, partition configuration.Partition
 	// To handle such cases, we can retry the command.
 	switch fsType {
 	case "fat32", "fat16", "vfat", "ext2", "ext3", "ext4", "xfs":
-		mkfsOptions := DefaultMkfsOptions[fsType]
-
 		if fsType == "fat32" || fsType == "fat16" {
 			fsType = "vfat"
 		}
 
+		options, err := getMkfsOptions(fsType, targetKernelVersion)
+		if err != nil {
+			return "", fmt.Errorf("failed to generate mkfs options:\n%w", err)
+		}
+
 		mkfsArgs := []string{"-t", fsType}
-		mkfsArgs = append(mkfsArgs, mkfsOptions...)
+		mkfsArgs = append(mkfsArgs, options...)
 		mkfsArgs = append(mkfsArgs, partDevPath)
 
 		err = retry.Run(func() error {
@@ -828,7 +828,11 @@ func FormatSinglePartition(partDevPath string, partition configuration.Partition
 		}, totalAttempts, retryDuration)
 		if err != nil {
 			err = fmt.Errorf("could not format partition with type %v after %v retries", fsType, totalAttempts)
+			return "", err
 		}
+
+		return fsType, nil
+
 	case "linux-swap":
 		err = retry.Run(func() error {
 			_, stderr, err := shell.Execute("mkswap", partDevPath)
@@ -840,6 +844,7 @@ func FormatSinglePartition(partDevPath string, partition configuration.Partition
 		}, totalAttempts, retryDuration)
 		if err != nil {
 			err = fmt.Errorf("could not format partition with type %v after %v retries", fsType, totalAttempts)
+			return "", err
 		}
 
 		_, stderr, err := shell.Execute("swapon", partDevPath)
@@ -847,13 +852,119 @@ func FormatSinglePartition(partDevPath string, partition configuration.Partition
 			err = fmt.Errorf("failed to execute swapon:\n%v\n%w", stderr, err)
 			return "", err
 		}
+
+		return fsType, nil
+
 	case "":
 		logger.Log.Debugf("No filesystem type specified. Ignoring for partition: %v", partDevPath)
+		return "", nil
+
 	default:
 		return fsType, fmt.Errorf("unrecognized filesystem format: %v", fsType)
 	}
+}
 
-	return
+// When calling mkfs, the default options change depending on the host OS you are running on and typically match
+// what the distro has decided is best for their OS. For example, for ext2/3/4, the defaults are stored in
+// /etc/mke2fs.conf.
+// However, when building Azure Linux images, the defaults should be as consistent as possible and should only contain
+// features that are supported on Azure Linux.
+func getMkfsOptions(fsType string, targetKernelVersion *versioncompare.TolerantVersion) ([]string, error) {
+	options := []string(nil)
+
+	buildHostKernelVersion, err := systemdependency.GetBuildHostKernelVersion()
+	if err != nil {
+		return nil, err
+	}
+
+	// The disk has to be able to be mounted by both the build host and the runtime OS.
+	kernelVersion := targetKernelVersion
+	if buildHostKernelVersion.Compare(kernelVersion) < 0 {
+		kernelVersion = buildHostKernelVersion
+	}
+
+	switch fsType {
+	case "vfat":
+
+	case "ext2":
+		options = []string{"-b", "4096", "-O", "none,sparse_super,large_file,filetype,resize_inode,dir_index,ext_attr"}
+
+	case "ext3":
+		options = []string{"-b", "4096", "-O", "none,sparse_super,large_file,filetype,resize_inode,dir_index,ext_attr,has_journal"}
+
+	case "ext4":
+		mke2fsVersion, err := getMke2fsVersion()
+		if err != nil {
+			return nil, err
+		}
+
+		// Feature             e2progs  kernel
+		// metadata_csum_seed  v1.43    v4.4
+		// orphan_file         v1.47    v5.15
+		switch {
+		case kernelVersion.Compare(versioncompare.New("5.15")) >= 0 &&
+			mke2fsVersion.Compare(versioncompare.New("1.47")) >= 0:
+			options = []string{"-b", "4096", "-O", "none,sparse_super,large_file,filetype,resize_inode,dir_index,ext_attr,has_journal,extent,huge_file,flex_bg,metadata_csum,metadata_csum_seed,64bit,dir_nlink,extra_isize,orphan_file"}
+
+		default:
+			options = []string{"-b", "4096", "-O", "none,sparse_super,large_file,filetype,resize_inode,dir_index,ext_attr,has_journal,extent,huge_file,flex_bg,metadata_csum,64bit,dir_nlink,extra_isize"}
+		}
+
+	case "xfs":
+		mkfsXfsVersion, err := getMkfsXfsVersion()
+		if err != nil {
+			return nil, err
+		}
+
+		// Feature  xfsprogs   kernel
+		// nrext64  v5.19      v5.19
+		if mkfsXfsVersion.Compare(versioncompare.New("5.19")) >= 0 &&
+			kernelVersion.Compare(versioncompare.New("5.19")) < 0 {
+			// Disable feature that is not supported on older kernel.
+			options = []string{"-i", "nrext64=0"}
+		}
+
+	default:
+		return nil, fmt.Errorf("unrecognized filesystem format: %v", fsType)
+	}
+
+	return options, nil
+}
+
+func getMke2fsVersion() (*versioncompare.TolerantVersion, error) {
+	_, stderr, err := shell.Execute("mke2fs", "-V")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get mke2fs's version:\n%w", err)
+	}
+
+	fullVersionString := strings.TrimSpace(stderr)
+
+	match := mke2fsVersionRegex.FindStringSubmatch(fullVersionString)
+	if match == nil {
+		return nil, fmt.Errorf("failed to parse mke2fs's version (%s)", fullVersionString)
+	}
+
+	versionString := match[1]
+	version := versioncompare.New(versionString)
+	return version, nil
+}
+
+func getMkfsXfsVersion() (*versioncompare.TolerantVersion, error) {
+	stdout, _, err := shell.Execute("mkfs.xfs", "-V")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get mkfs.xfs's version:\n%w", err)
+	}
+
+	fullVersionString := strings.TrimSpace(stdout)
+
+	match := mkfsXfsVersionRegex.FindStringSubmatch(fullVersionString)
+	if match == nil {
+		return nil, fmt.Errorf("failed to parse mkfs.xfs's version (%s)", fullVersionString)
+	}
+
+	versionString := match[1]
+	version := versioncompare.New(versionString)
+	return version, nil
 }
 
 // SystemBlockDevices returns all block devices on the host system.

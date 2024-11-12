@@ -9,6 +9,7 @@ import (
 	"github.com/microsoft/azurelinux/toolkit/tools/imagecustomizerapi"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/safechroot"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/shell"
+	"github.com/microsoft/azurelinux/toolkit/tools/internal/systemdependency"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,6 +22,12 @@ func customizePartitionsUsingFileCopy(buildDir string, baseConfigPath string, co
 	}
 	defer existingImageConnection.Close()
 
+	baseImageKernelVersion, err := systemdependency.GetOldestInstalledKernelVersion(
+		existingImageConnection.Chroot().RootDir())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get kernel version of base image:\n%w", err)
+	}
+
 	diskConfig := config.Storage.Disks[0]
 
 	installOSFunc := func(imageChroot *safechroot.Chroot) error {
@@ -28,7 +35,7 @@ func customizePartitionsUsingFileCopy(buildDir string, baseConfigPath string, co
 	}
 
 	partIdToPartUuid, err := createNewImage(newBuildImageFile, diskConfig, config.Storage.FileSystems,
-		buildDir, "newimageroot", installOSFunc)
+		buildDir, "newimageroot", baseImageKernelVersion, installOSFunc)
 	if err != nil {
 		return nil, err
 	}

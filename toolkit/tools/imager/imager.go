@@ -21,6 +21,7 @@ import (
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/safechroot"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/tdnf"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/timestamp"
+	"github.com/microsoft/azurelinux/toolkit/tools/internal/versioncompare"
 	"github.com/microsoft/azurelinux/toolkit/tools/pkg/profile"
 
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -66,6 +67,11 @@ const (
 	// kickstartPartitionFile is the file that includes the partitioning schema used by
 	// kickstart installation
 	kickstartPartitionFile = "/tmp/part-include"
+)
+
+var (
+	// Imager tool only supports the Azure Linux version within the current git branch.
+	targetKernelVersion = versioncompare.New("6.6")
 )
 
 func main() {
@@ -429,7 +435,7 @@ func setupRealDisk(diskDevPath string, diskConfig configuration.Disk, rootEncryp
 ) (partIDToDevPathMap, partIDToFsTypeMap map[string]string, encryptedRoot diskutils.EncryptedRootDevice, readOnlyRoot diskutils.VerityDevice, err error) {
 	// Set up partitions
 	partIDToDevPathMap, partIDToFsTypeMap, encryptedRoot, readOnlyRoot, err = diskutils.CreatePartitions(diskDevPath,
-		diskConfig, rootEncryption, readOnlyRootConfig, diskKnownToBeEmpty)
+		diskConfig, rootEncryption, readOnlyRootConfig, diskKnownToBeEmpty, targetKernelVersion)
 	if err != nil {
 		err = fmt.Errorf("failed to create partitions on disk (%s):\n%w", diskDevPath, err)
 		return

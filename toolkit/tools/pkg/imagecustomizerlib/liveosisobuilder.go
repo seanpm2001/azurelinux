@@ -21,6 +21,7 @@ import (
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/safeloopback"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/safemount"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/shell"
+	"github.com/microsoft/azurelinux/toolkit/tools/internal/systemdependency"
 	"github.com/microsoft/azurelinux/toolkit/tools/pkg/isomakerlib"
 	"golang.org/x/sys/unix"
 )
@@ -531,36 +532,18 @@ func (b *LiveOSIsoBuilder) extractBootDirFiles(writeableRootfsDir string) error 
 //   - the following is populated:
 //     b.artifacts.kernelVersion
 func (b *LiveOSIsoBuilder) findKernelVersion(writeableRootfsDir string) error {
-	const kernelModulesDir = "/usr/lib/modules"
-
-	kernelParentPath := filepath.Join(writeableRootfsDir, kernelModulesDir)
-	kernelDirs, err := os.ReadDir(kernelParentPath)
+	kernels, err := systemdependency.GetInstalledKernelStringVersions(writeableRootfsDir)
 	if err != nil {
-		return fmt.Errorf("failed to enumerate kernels under (%s):\n%w", kernelParentPath, err)
+		return err
 	}
 
-	// Filter out directories that are empty.
-	// Some versions of Azure Linux 2.0 don't cleanup properly when the kernel package is uninstalled.
-	filteredKernelDirs := []fs.DirEntry(nil)
-	for _, kernelDir := range kernelDirs {
-		kernelPath := filepath.Join(kernelParentPath, kernelDir.Name())
-		empty, err := file.IsDirEmpty(kernelPath)
-		if err != nil {
-			return err
-		}
-
-		if !empty {
-			filteredKernelDirs = append(filteredKernelDirs, kernelDir)
-		}
+	if len(kernels) == 0 {
+		return fmt.Errorf("did not find any installed kernels")
 	}
-
-	if len(filteredKernelDirs) == 0 {
-		return fmt.Errorf("did not find any kernels installed under (%s)", kernelModulesDir)
+	if len(kernels) > 1 {
+		return fmt.Errorf("unsupported scenario: found more than one installed kernel")
 	}
-	if len(filteredKernelDirs) > 1 {
-		return fmt.Errorf("unsupported scenario: found more than one kernel under (%s)", kernelModulesDir)
-	}
-	b.artifacts.kernelVersion = filteredKernelDirs[0].Name()
+	b.artifacts.kernelVersion = kernels[0]
 	logger.Log.Debugf("Found installed kernel version (%s)", b.artifacts.kernelVersion)
 	return nil
 }
@@ -1462,6 +1445,11 @@ func (b *LiveOSIsoBuilder) createWriteableImageFromSquashfs(buildDir, rawImageFi
 		},
 	}
 
+	baseImageKernelVersion, err := systemdependency.GetOldestInstalledKernelVersion(squashMountDir)
+	if err != nil {
+		return fmt.Errorf("failed to get kernel version from squashfs:\n%w", err)
+	}
+
 	// populate the newly created disk image with content from the squash fs
 	installOSFunc := func(imageChroot *safechroot.Chroot) error {
 		// At the point when this copy will be executed, both the boot and the
@@ -1477,7 +1465,8 @@ func (b *LiveOSIsoBuilder) createWriteableImageFromSquashfs(buildDir, rawImageFi
 
 	// create the new raw disk image
 	writeableChrootDir := "writeable-raw-image"
-	_, err = createNewImage(rawImageFile, diskConfig, fileSystemConfigs, buildDir, writeableChrootDir, installOSFunc)
+	_, err = createNewImage(rawImageFile, diskConfig, fileSystemConfigs, buildDir, writeableChrootDir,
+		baseImageKernelVersion, installOSFunc)
 	if err != nil {
 		return fmt.Errorf("failed to copy squashfs into new writeable image (%s):\n%w", rawImageFile, err)
 	}
