@@ -16,9 +16,6 @@ Distribution: Azure Linux
 Source0:  https://github.com/microsoft/confidential-containers-containerd/archive/refs/tags/%{version}.tar.gz#/%{name}-%{version}.tar.gz
 Source1: containerd.service
 Source2: containerd.toml
-Patch0: CVE-2023-47108.patch
-Patch1: CVE-2023-44487.patch
-Patch2: fix_cc_tests_for_golang1.21.patch
 
 %{?systemd_requires}
 
