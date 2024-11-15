@@ -1,7 +1,7 @@
 %global security_hardening none
 %global sha512hmac bash %{_sourcedir}/sha512hmac-openssl.sh
 %global mstflintver 4.28.0
-%define uname_r %{version}-%{release}
+%define uname_r %{version}-%{release}-64k
 %define mariner_version 3
 
 # find_debuginfo.sh arguments are set by default in rpm's macros.
