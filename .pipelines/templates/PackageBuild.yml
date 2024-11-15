@@ -160,6 +160,12 @@ steps:
           artifactFeeds: "${{ parameters.pipArtifactFeeds }}"
         displayName: "Authenticate to custom pip artifact feeds"
 
+  - script: |
+      set -euo pipefail
+
+      sudo tdnf install -y tree
+    displayName: "Install 'tree'"
+
   - ${{ if parameters.customToolchainArtifactName }}:
       - task: DownloadPipelineArtifact@2
         displayName: "Download toolchain"
