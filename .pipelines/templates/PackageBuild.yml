@@ -168,6 +168,8 @@ steps:
           patterns: "**/${{ parameters.customToolchainTarballName }}"
 
       - script: |
+          set -euo pipefail
+
           toolchain_archive="$(find "$(Pipeline.Workspace)" -name "${{ parameters.customToolchainTarballName }}" -print -quit)"
           if [[ ! -f "$toolchain_archive" ]]; then
             echo "ERROR: toolchain archive not found!" >&2
@@ -186,13 +188,26 @@ steps:
           patterns: "**/${{ inputCacheArtifact.rpmsTarball }}"
 
       - script: |
+          set -euo pipefail
+
           rpms_archive="$(find "$(Pipeline.Workspace)" -name "${{ inputCacheArtifact.rpmsTarball }}" -print -quit)"
           if [[ ! -f "$rpms_archive" ]]; then
             echo "ERROR: cache RPMs archive '${{ inputCacheArtifact.rpmsTarball }}' not found!" >&2
             exit 1
           fi
 
+          rpm_cache_dir="${{ parameters.buildRepoRoot }}/build/rpm_cache"
+          if [[ -d "$rpm_cache_dir" ]]; then
+            echo "Cached RPMs directory ($rpm_cache_dir) before hydration:"
+            tree "$rpm_cache_dir"
+          else
+            echo "Cached RPMs directory ($rpm_cache_dir) not found."
+          fi
+
           sudo make -C "${{ parameters.buildRepoRoot }}/toolkit" hydrate-cached-rpms CACHED_PACKAGES_ARCHIVE="$rpms_archive"
+
+          echo "Cached RPMs directory ($rpm_cache_dir) after hydration:"
+          tree "$rpm_cache_dir"
         displayName: "Populate cache RPMs"
 
   - script: |
