@@ -3,7 +3,7 @@
 
 Name:         kata-containers-cc
 Version:      3.2.0.azl3
-Release:      7%{?dist}
+Release:      8%{?dist}
 Summary:      Kata Confidential Containers package developed for Confidential Containers on AKS
 License:      ASL 2.0
 URL:          https://github.com/microsoft/kata-containers
@@ -148,8 +148,8 @@ fi
 %{tools_pkg}/tools/osbuilder/node-builder/azure-linux/agent-install/usr/lib/systemd/system/kata-agent.service
 
 %changelog
-* Tue Nov 12 2024 CBL-Mariner Servicing Account <cblmargh@microsoft.com> - 3.2.0.azl3-7
-- Auto-upgrade to 3.2.0.azl3
+* Tue Nov 12 2024 CBL-Mariner Servicing Account <cblmargh@microsoft.com> - 3.2.0.azl3-8
+- Auto-upgrade to 3.2.0.azl3. release 8 has 1.2.0 OCI version
 
 * Fri Sep 20 2024 Manuel Huber <mahuber@microsoft.com> - 3.2.0.azl3-1
 - Upgrade to 3.2.0.azl3 release, refactor build instructions
