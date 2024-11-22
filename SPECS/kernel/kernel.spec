@@ -30,7 +30,7 @@
 Summary:        Linux Kernel
 Name:           kernel
 Version:        6.6.57.1
-Release:        2%{?dist}
+Release:        5%{?dist}
 License:        GPLv2
 Vendor:         Microsoft Corporation
 Distribution:   Azure Linux
@@ -407,6 +407,15 @@ echo "initrd of kernel %{uname_r} removed" >&2
 %{_sysconfdir}/bash_completion.d/bpftool
 
 %changelog
+* Fri Nov 22 2024 aperezguevar <aperezguevar@microsoft.com> - 6.6.57.1-5
+- HPC enable NUMA and UCLAMP
+
+* Fri Nov 22 23:24:23 UTC 2024 aperezguevar <aperezguevar@microsoft.com> - 6.6.57.1-4
+- HPC enable NUMA and UCLAMP
+
+* Fri Nov 22 19:40:20 UTC 2024 aperezguevar <aperezguevar@microsoft.com> - 6.6.57.1-3
+- HPC enable NUMA and UCLAMP
+
 * Wed Oct 30 2024 Thien Trung Vuong <tvuong@microsoft.com> - 6.6.57.1-2
 - UKI: remove noxsaves parameter from cmdline
 
