@@ -31,7 +31,6 @@ endif
 go_tool_list = \
 	bldtracker \
 	boilerplate \
-	containercheck \
 	depsearch \
 	downloader \
 	grapher \

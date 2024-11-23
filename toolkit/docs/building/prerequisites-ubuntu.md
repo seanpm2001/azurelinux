@@ -23,7 +23,6 @@ sudo apt -y install \
     parted \
     pigz \
     openssl \
-    systemd \
     qemu-utils \
     rpm \
     tar \
