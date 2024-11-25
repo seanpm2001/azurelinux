@@ -45,7 +45,7 @@ popd
 
 %build
 pushd %{_builddir}/%{name}-%{version}/tools/osbuilder/node-builder/azure-linux
-OS_VERSION=3.0 %make_build package
+%make_build package
 popd
 
 %define kata_path     /opt/kata-containers
@@ -98,6 +98,7 @@ popd
 %{tools_pkg}/tools/osbuilder/node-builder/azure-linux/clean.sh
 %{tools_pkg}/tools/osbuilder/node-builder/azure-linux/common.sh
 %{tools_pkg}/tools/osbuilder/node-builder/azure-linux/uvm_build.sh
+%{tools_pkg}/tools/osbuilder/node-builder/azure-linux/uvm_install.sh
 
 %dir %{tools_pkg}/tools/osbuilder/node-builder/azure-linux/agent-install
 %dir %{tools_pkg}/tools/osbuilder/node-builder/azure-linux/agent-install/usr
