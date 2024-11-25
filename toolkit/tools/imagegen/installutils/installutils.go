@@ -2036,7 +2036,7 @@ func SELinuxRelabelFiles(installChroot safechroot.ChrootInterface, mountPointToF
 					defer resetSELinuxExecContext()
 				}
 			}
-			
+
 			// We only want to print basic info, filter out the real output unless at trace level (Execute call handles that)
 			files := 0
 			lastFile := ""
@@ -2232,30 +2232,30 @@ func GetPartLabel(device string) (stdout string, err error) {
 //	ie "UUID=12345678-abcd..."
 func FormatMountIdentifier(identifier configuration.MountIdentifier, device string) (identifierString string, err error) {
 	var id string
-	switch identifier {
-	case configuration.MountIdentifierUuid:
-		id, err = GetUUID(device)
-		if err != nil {
-			return
-		}
-		identifierString = fmt.Sprintf("UUID=%s", id)
-	case configuration.MountIdentifierPartUuid:
-		id, err = GetPartUUID(device)
-		if err != nil {
-			return
-		}
-		identifierString = fmt.Sprintf("PARTUUID=%s", id)
-	case configuration.MountIdentifierPartLabel:
-		id, err = GetPartLabel(device)
-		if err != nil {
-			return
-		}
-		identifierString = fmt.Sprintf("PARTLABEL=%s", id)
-	case configuration.MountIdentifierNone:
-		err = fmt.Errorf("must select a mount identifier for device (%s)", device)
-	default:
-		err = fmt.Errorf("unknown mount identifier: (%v)", identifier)
+	// switch identifier {
+	// case configuration.MountIdentifierUuid:
+	id, err = GetUUID(device)
+	if err != nil {
+		return
 	}
+	identifierString = fmt.Sprintf("UUID=%s", id)
+	// case configuration.MountIdentifierPartUuid:
+	// 	id, err = GetPartUUID(device)
+	// 	if err != nil {
+	// 		return
+	// 	}
+	// 	identifierString = fmt.Sprintf("PARTUUID=%s", id)
+	// case configuration.MountIdentifierPartLabel:
+	// 	id, err = GetPartLabel(device)
+	// 	if err != nil {
+	// 		return
+	// 	}
+	// 	identifierString = fmt.Sprintf("PARTLABEL=%s", id)
+	// case configuration.MountIdentifierNone:
+	// 	err = fmt.Errorf("must select a mount identifier for device (%s)", device)
+	// default:
+	// 	err = fmt.Errorf("unknown mount identifier: (%v)", identifier)
+	// }
 	return
 }
 
