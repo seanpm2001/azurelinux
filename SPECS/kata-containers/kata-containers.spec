@@ -38,7 +38,7 @@
 
 Summary:        Kata Containers
 Name:           kata-containers
-Version:        3.2.0.azl2
+Version:        3.2.1.azl2
 Release:        4%{?dist}
 License:        ASL 2.0
 Vendor:         Microsoft Corporation
