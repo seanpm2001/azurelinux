@@ -50,7 +50,7 @@ Version:        255
 # determine the build information from local checkout
 Version:        %(tools/meson-vcs-tag.sh . error | sed -r 's/-([0-9])/.^\1/; s/-g/_g/')
 %endif
-Release:        19%{?dist}
+Release:        9999%{?dist}
 
 # FIXME - hardcode to 'stable' for now as that's what we have in our blobstore
 %global stable 1
@@ -1216,7 +1216,7 @@ rm -f %{name}.lang
 # %autochangelog. So we need to continue manually maintaining the
 # changelog here.
 %changelog
-* Thu Oct 03 2024 Pawel Winogrodzki <pawelwi@microsoft.com> - 255-19
+* Thu Oct 03 2024 Pawel Winogrodzki <pawelwi@microsoft.com> - 255-9999
 - Dummy bump.
 
 * Fri Sep 13 2024 Thien Trung Vuong <tvuong@microsoft.com> - 255-18

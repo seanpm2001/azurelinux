@@ -6,7 +6,7 @@
 Summary:        GRand Unified Bootloader
 Name:           grub2
 Version:        2.06
-Release:        22%{?dist}
+Release:        9999%{?dist}
 License:        GPLv3+
 Vendor:         Microsoft Corporation
 Distribution:   Azure Linux
@@ -428,7 +428,7 @@ cp $GRUB_PXE_MODULE_SOURCE $EFI_BOOT_DIR/$GRUB_PXE_MODULE_NAME
 %config(noreplace) %{_sysconfdir}/grub.d/41_custom
 
 %changelog
-* Wed Nov 13 2024 Pawel Winogrodzki <pawelwi@microsoft.com> - 2.06-22
+* Wed Nov 13 2024 Pawel Winogrodzki <pawelwi@microsoft.com> - 255-9999
 - Dummy bump.
 
 * Thu Oct 03 2024 Pawel Winogrodzki <pawelwi@microsoft.com> - 2.06-21

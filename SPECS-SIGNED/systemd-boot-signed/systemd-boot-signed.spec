@@ -14,7 +14,7 @@ Version:        255
 # determine the build information from local checkout
 Version:        %(tools/meson-vcs-tag.sh . error | sed -r 's/-([0-9])/.^\1/; s/-g/_g/')
 %endif
-Release:        19%{?dist}
+Release:        9999%{?dist}
 License:        LGPL-2.1-or-later AND MIT AND GPL-2.0-or-later
 Vendor:         Microsoft Corporation
 Distribution:   Azure Linux
@@ -90,7 +90,7 @@ popd
 /boot/efi/EFI/BOOT/grubx64.efi
 
 %changelog
-* Wed Oct 30 2024 Pawel Winogrodzki <pawelwi@microsoft.com> - 255-19
+* Wed Oct 30 2024 Pawel Winogrodzki <pawelwi@microsoft.com> - 255-9999
 - Dummy bump.
 
 * Fri Sep 13 2024 Thien Trung Vuong <tvuong@microsoft.com> - 255-18
