@@ -840,7 +840,7 @@ func customizeUkiImageHelper(buildDir string, buildImageFile string) error {
 	logger.Log.Infof("Updated ukify.conf content:\n%s", string(latestUkifyConfigContent))
 
 	stubPath := filepath.Join(bootPartitionTmpDir, "linuxx64.efi.stub")
-	ukiFullPath := filepath.Join(systemBootPartitionTmpDir, fmt.Sprintf("EFI/Linux/%s.unsigned.efi", linuxValue))
+	ukiFullPath := filepath.Join(systemBootPartitionTmpDir, "EFI/Linux/vmlinuz-1.unsigned.efi")
 
 	ukifyCmd := []string{
 		"ukify", "-c", fmt.Sprintf("%s", ukifyConfigFullPath), "build",

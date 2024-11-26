@@ -812,7 +812,7 @@ func regenerateInitrd(imageChroot *safechroot.Chroot) error {
 		if mkinitrdExists {
 			return shell.ExecuteLiveWithErr(1, "mkinitrd")
 		} else {
-			return shell.ExecuteLiveWithErr(1, "dracut", "--force", "--regenerate-all")
+			return shell.ExecuteLiveWithErr(1, "dracut", "--force", "--regenerate-all", "--no-hostonly", "--no-hostonly-default-device", "--zstd")
 		}
 	})
 	if err != nil {
