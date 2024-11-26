@@ -28,7 +28,7 @@
 Summary:        Linux Kernel
 Name:           kernel
 Version:        5.15.167.1
-Release:        3%{?dist}
+Release:        9999%{?dist}
 License:        GPLv2
 Vendor:         Microsoft Corporation
 Distribution:   Mariner
@@ -426,7 +426,7 @@ ln -sf linux-%{uname_r}.cfg /boot/mariner.cfg
 %{_sysconfdir}/bash_completion.d/bpftool
 
 %changelog
-* Wed Nov 13 2024 Pawel Winogrodzki <pawelwi@microsoft.com> - 5.15.167.1-3
+* Wed Nov 13 2024 Pawel Winogrodzki <pawelwi@microsoft.com> - 5.15.167.1-9999
 - Dummy bump.
 
 * Wed Oct 30 2024 Pawel Winogrodzki <pawelwi@microsoft.com> - 5.15.167.1-2
