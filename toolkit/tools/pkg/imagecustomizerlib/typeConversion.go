@@ -142,7 +142,7 @@ func partitionSettingsToImager(fileSystems []imagecustomizerapi.FileSystem,
 
 func partitionSettingToImager(fileSystem imagecustomizerapi.FileSystem,
 ) (configuration.PartitionSetting, error) {
-	mountIdType := imagecustomizerapi.MountIdentifierTypeUuid
+	mountIdType := imagecustomizerapi.MountIdentifierTypeDefault
 	mountOptions := ""
 	mountPath := ""
 	if fileSystem.MountPoint != nil {
