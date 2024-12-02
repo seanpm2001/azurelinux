@@ -40,7 +40,7 @@ RUN set -eux; \
 ENV LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8 LC_ALL=en_US.UTF-8
 
 # put commands inside of directories on the path
-RUN set -eux; \
+RUN VERSION=$(rpm -qa rabbitmq-server --queryformat '%{VERSION}\n'); \
 	ln -s /usr/lib/rabbitmq/lib/rabbitmq_server-3.11.11/sbin/rabbitmqctl /usr/sbin/rabbitmqctl; \
 	ln -s /usr/lib/rabbitmq/lib/rabbitmq_server-3.11.11/sbin/rabbitmq-server /usr/sbin/rabbitmq-server; \
 	ln -s /usr/lib/rabbitmq/lib/rabbitmq_server-3.11.11/sbin/rabbitmq-plugins /usr/sbin/rabbitmq-plugins; \
