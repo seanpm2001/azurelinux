@@ -1,7 +1,7 @@
 Summary:        ALSA Utilities.
 Name:           alsa-utils
 Version:        1.2.9
-Release:        1%{?dist}
+Release:        1000%{?dist}
 License:        GPLv2+
 URL:            https://alsa-project.org
 Group:          Applications/Internet
@@ -11,7 +11,8 @@ Source0:        https://www.alsa-project.org/files/pub/utils/%{name}-%{version}.
 Patch0:         ens1371.patch
 BuildRequires:  alsa-lib-devel >= %{version}
 BuildRequires:  ncurses-devel
-Requires:       kernel-drivers-sound ncurses
+Requires:       (kernel-drivers-sound or kernel-64k-drivers-sound)
+Requires:       ncurses
 Requires:       alsa-lib ncurses >= %{version}
 %description
 The ALSA Utilities package contains various utilities which are useful

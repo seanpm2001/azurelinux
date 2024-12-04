@@ -1,7 +1,7 @@
 Summary:        Connector for espeak and speakup
 Name:           espeakup
 Version:        0.90
-Release:        1%{?dist}
+Release:        1000%{?dist}
 License:        GPLv3
 Vendor:         Microsoft Corporation
 Distribution:   Azure Linux
@@ -16,7 +16,7 @@ BuildRequires:  meson
 BuildRequires:  systemd
 Requires:       espeak-ng
 Requires:       glibc
-Requires:       kernel-drivers-accessibility
+Requires:       (kernel-drivers-accessibility or kernel-64k-drivers-accessibility)
 Requires:       systemd
 
 %description
