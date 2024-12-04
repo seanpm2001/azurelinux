@@ -4,8 +4,8 @@
         "alsa-utils",
         "espeak-ng",
         "espeakup",
-        "kernel-drivers-accessibility",
-        "kernel-drivers-sound",
+        "kernel-64k-drivers-accessibility",
+        "kernel-64k-drivers-sound",
         "pcaudiolib"
     ]
 }

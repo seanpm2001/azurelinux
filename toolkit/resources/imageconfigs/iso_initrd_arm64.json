@@ -18,7 +18,7 @@
                 "packagelists/iso-initrd-packages-arm64.json"
             ],
             "KernelOptions": {
-                "default": "kernel"
+                "default": "kernel-64k"
             },
             "AdditionalFiles": {
                 "../../out/tools/imager": "/installer/imager",
