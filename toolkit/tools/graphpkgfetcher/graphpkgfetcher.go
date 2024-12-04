@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/microsoft/azurelinux/toolkit/tools/internal/debugutils"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/exe"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/file"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/logger"
@@ -462,10 +463,14 @@ func downloadSingleDeltaRPM(realDependencyGraph *pkggraph.PkgGraph, buildNode *p
 
 func printStuff(spot string) {
 	rpmPath := path.Join(*tmpDir, "outputrpms")
-	yumPath := path.Join(*tmpDir, "etc", "yum.repos.d", "*")
+	yumPath := path.Join(*tmpDir, "etc", "yum.repos.d")
+	repoFilePath := path.Join(yumPath, "allrepos.repo")
+
 	logger.Log.Errorf("Contents of %s at %s", rpmPath, spot)
 	_ = shell.NewExecBuilder("ls", "-la", rpmPath).LogLevel(logrus.ErrorLevel, logrus.ErrorLevel).Execute()
-	_ = shell.NewExecBuilder("cat", yumPath).LogLevel(logrus.ErrorLevel, logrus.ErrorLevel).Execute()
+	_ = shell.NewExecBuilder("ls", "-la", yumPath).LogLevel(logrus.ErrorLevel, logrus.ErrorLevel).Execute()
+	_ = shell.NewExecBuilder("cat", repoFilePath).LogLevel(logrus.ErrorLevel, logrus.ErrorLevel).Execute()
+	debugutils.WaitForUser("hi?")
 }
 
 // resolveSingleNode caches the RPM for a single node.
