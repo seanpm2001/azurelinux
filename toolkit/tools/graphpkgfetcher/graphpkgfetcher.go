@@ -461,9 +461,11 @@ func downloadSingleDeltaRPM(realDependencyGraph *pkggraph.PkgGraph, buildNode *p
 }
 
 func printStuff(spot string) {
-	path := path.Join(*tmpDir, "outputrpms")
-	logger.Log.Errorf("Contents of %s at %s", path, spot)
-	_ = shell.NewExecBuilder("ls", "-la", path).LogLevel(logrus.ErrorLevel, logrus.ErrorLevel).Execute()
+	rpmPath := path.Join(*tmpDir, "outputrpms")
+	yumPath := path.Join(*tmpDir, "etc", "yum.repos.d", "*")
+	logger.Log.Errorf("Contents of %s at %s", rpmPath, spot)
+	_ = shell.NewExecBuilder("ls", "-la", rpmPath).LogLevel(logrus.ErrorLevel, logrus.ErrorLevel).Execute()
+	_ = shell.NewExecBuilder("cat", yumPath).LogLevel(logrus.ErrorLevel, logrus.ErrorLevel).Execute()
 }
 
 // resolveSingleNode caches the RPM for a single node.
