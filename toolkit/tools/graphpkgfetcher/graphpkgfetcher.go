@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/microsoft/azurelinux/toolkit/tools/internal/debugutils"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/exe"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/file"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/logger"
@@ -470,7 +469,6 @@ func printStuff(spot string) {
 	_ = shell.NewExecBuilder("ls", "-la", rpmPath).LogLevel(logrus.ErrorLevel, logrus.ErrorLevel).Execute()
 	_ = shell.NewExecBuilder("ls", "-la", yumPath).LogLevel(logrus.ErrorLevel, logrus.ErrorLevel).Execute()
 	_ = shell.NewExecBuilder("cat", repoFilePath).LogLevel(logrus.ErrorLevel, logrus.ErrorLevel).Execute()
-	debugutils.WaitForUser("hi?")
 }
 
 // resolveSingleNode caches the RPM for a single node.
