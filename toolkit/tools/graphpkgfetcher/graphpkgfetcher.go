@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -17,9 +18,11 @@ import (
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/pkggraph"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/pkgjson"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/rpm"
+	"github.com/microsoft/azurelinux/toolkit/tools/internal/shell"
 	"github.com/microsoft/azurelinux/toolkit/tools/internal/timestamp"
 	"github.com/microsoft/azurelinux/toolkit/tools/pkg/profile"
 	"github.com/microsoft/azurelinux/toolkit/tools/scheduler/schedulerutils"
+	"github.com/sirupsen/logrus"
 
 	"gonum.org/v1/gonum/graph"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -293,10 +296,13 @@ func resolveGraphNodes(dependencyGraph *pkggraph.PkgGraph, inputSummaryFile stri
 	unresolvedNodes := findUnresolvedNodes(dependencyGraph.AllRunNodes())
 	unresolvedNodesCount := len(unresolvedNodes)
 
+	printStuff("start")
+
 	timestamp.StartEvent("clone graph", nil)
 	for i, n := range unresolvedNodes {
 		progressHeader := fmt.Sprintf("Cache progress %d%%", (i*100)/unresolvedNodesCount)
 		resolveErr := resolveSingleNode(cloner, n, downloadDependencies, toolchainPackages, fetchedPackages, prebuiltPackages, *outDir)
+		printStuff("AFTER: " + n.FriendlyName())
 		if resolveErr == nil {
 			logger.Log.Infof("(%s): choosing (%s) to provide (%s)", progressHeader, filepath.Base(n.RpmPath), n.VersionedPkg.Name)
 			continue
@@ -454,14 +460,26 @@ func downloadSingleDeltaRPM(realDependencyGraph *pkggraph.PkgGraph, buildNode *p
 	return
 }
 
+func printStuff(spot string) {
+	path := path.Join(*tmpDir, "outputrpms")
+	logger.Log.Errorf("Contents of %s at %s", path, spot)
+	_ = shell.NewExecBuilder("ls", "-la", path).LogLevel(logrus.ErrorLevel, logrus.ErrorLevel).Execute()
+}
+
 // resolveSingleNode caches the RPM for a single node.
 // It will modify fetchedPackages on a successful package clone.
 func resolveSingleNode(cloner *rpmrepocloner.RpmRepoCloner, node *pkggraph.PkgNode, cloneDeps bool, toolchainPackages []string, fetchedPackages, prebuiltPackages map[string]bool, outDir string) (err error) {
+
+	printStuff("BEFORE WHATPROVIDES: " + node.FriendlyName())
+
 	logger.Log.Debugf("Adding node (%s) to the cache", node.FriendlyName())
 
 	logger.Log.Debugf("Searching for a package which supplies: (%s)", node.VersionedPkg.Name)
 	// Resolve nodes to exact package names so they can be referenced in the graph.
 	resolvedPackages, err := cloner.WhatProvides(node.VersionedPkg)
+
+	printStuff("AFTER WHATPROVIDES: " + node.FriendlyName())
+
 	if err != nil {
 		msg := fmt.Sprintf("Failed to resolve (%s) to a package. Error: %s", node.VersionedPkg, err)
 		// It is not an error if an implicit node could not be resolved as it may become available later in the build.
