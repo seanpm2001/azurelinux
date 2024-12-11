@@ -97,8 +97,8 @@ make LC_ALL= ARCH=%{arch} olddefconfig
 # Create the tarfs module on-the-fly
 mkdir -p tarfs
 cd tarfs
-cp %{Source5} tarfs.c
-cp %{Source6} Makefile
+cp %{SOURCE5} tarfs.c
+cp %{SOURCE6} Makefile
 # Build the tarfs module
 make
 # Install the tarfs module
