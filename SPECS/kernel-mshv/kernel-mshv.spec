@@ -801,10 +801,10 @@ EOF
 make VERBOSE=1 V=1 KBUILD_VERBOSE=1 KBUILD_BUILD_VERSION="1" KBUILD_BUILD_HOST="CBL-Mariner" ARCH=%{arch} %{?_smp_mflags}
 
 # Build the tarfs module
-make -C /lib/modules/%{uname_r}/build M=$(pwd)/drivers/misc/tarfs modules
+make
 
 # Install the tarfs module
-install -Dm 644 drivers/misc/tarfs/tarfs.ko %{buildroot}/lib/modules/%{uname_r}/extra/tarfs.ko
+install -Dm 644 ./tarfs.ko %{buildroot}/lib/modules/%{uname_r}/extra/tarfs.ko
 
 %define __modules_install_post \
 for MODULE in `find %{buildroot}/lib/modules/%{uname_r} -name *.ko` ; do \
