@@ -93,13 +93,13 @@ make LC_ALL=  ARCH=%{arch} olddefconfig
 %build
 make VERBOSE=1 V=1 KBUILD_VERBOSE=1 KBUILD_BUILD_VERSION="1" KBUILD_BUILD_HOST="CBL-Mariner" ARCH=%{arch} %{?_smp_mflags}
 
-%define __modules_install_post \
-for MODULE in `find %{buildroot}/lib/modules/%{uname_r} -name *.ko` ; do \
-    ./scripts/sign-file sha512 certs/signing_key.pem certs/signing_key.x509 $MODULE \
-    rm -f $MODULE.{sig,dig} \
-    xz $MODULE \
-    done \
-%{nil}
+#%define __modules_install_post \
+#for MODULE in `find %{buildroot}/lib/modules/%{uname_r} -name *.ko` ; do \
+#    ./scripts/sign-file sha512 certs/signing_key.pem certs/signing_key.x509 $MODULE \
+#    rm -f $MODULE.{sig,dig} \
+##    xz $MODULE \
+#    done \
+#%{nil}
 
 # We want to compress modules after stripping. Extra step is added to
 # the default __spec_install_post.
