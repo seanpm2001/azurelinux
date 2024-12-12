@@ -21,8 +21,7 @@ Source1:        config
 Source2:        cbl-mariner-ca-20211013.pem
 Source3:        50_mariner_mshv.cfg
 Source4:        50_mariner_mshv_menuentry
-Source5:		tarfs.c
-Source6:		Makefile
+Source5:		tarfs.ko
 Patch0:         fix_python_3.12_build_errors.patch
 ExclusiveArch:  x86_64
 BuildRequires:  audit-devel
@@ -97,10 +96,7 @@ make LC_ALL= ARCH=%{arch} olddefconfig
 # Create the tarfs module on-the-fly
 mkdir -p tarfs
 cd tarfs
-cp %{SOURCE5} tarfs.c
-cp %{SOURCE6} Makefile
-# Build the tarfs module
-make
+cp %{SOURCE5} ./tarfs.ko
 # Install the tarfs module
 install -Dm 644 ./tarfs.ko %{buildroot}/lib/modules/%{uname_r}/tarfs.ko
 
