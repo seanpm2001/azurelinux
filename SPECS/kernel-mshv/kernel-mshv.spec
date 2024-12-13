@@ -11,7 +11,7 @@
 Summary:        Mariner kernel that has MSHV Host support
 Name:           kernel-mshv
 Version:        5.15.157.mshv1
-Release:        3%{?dist}
+Release:        4%{?dist}
 License:        GPLv2
 Group:          Development/Tools
 Vendor:         Microsoft Corporation
@@ -224,6 +224,9 @@ echo "initrd of kernel %{uname_r} removed" >&2
 %{_includedir}/perf/perf_dlfilter.h
 
 %changelog
+* Fri Dec 13 2024 Manuel Huber <mahuber@microsoft.com> - 5.15.157.mshv1-4
+- vsock_diag test
+
 * Fri Oct 25 2024 Saul Paredes <saulparedes@microsoft.com> - 5.15.157.mshv1-3
 - Increase build verbosity
 
